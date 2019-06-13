@@ -19,16 +19,16 @@ function TrainingController(
   appConfig
 ) {
   let exportData;
-  let statuscheck = $interval(getRasaStatus, 5000);
+  //let statuscheck = $interval(getRasaStatus, 5000);
   $scope.generateError = '';
   $scope.toLowercase = false;
   $scope.message = '';
 
   getRasaStatus();
 
-  $scope.$on('$destroy', function() {
+ /* $scope.$on('$destroy', function() {
     $interval.cancel(statuscheck);
-  });
+  });*/
 
   Agent.query(function(data) {
     $scope.agentList = data;
@@ -46,15 +46,24 @@ function TrainingController(
     if(agentToTrain.rasa_nlu_fixed_model_name!=null && agentToTrain.rasa_nlu_fixed_model_name !== ''){
       modelName = agentToTrain.rasa_nlu_fixed_model_name;
     }
-
+    $rootScope.trainings_under_this_process += 1;
     $http.post(appConfig.api_endpoint_v2 + "/rasa/train?name=" + modelName+ "&project=" + agentToTrain.agent_name, JSON.stringify(dataToPost)).then(
         function(response){
+          $rootScope.$broadcast(
+              'setAlertText',
+              "Training for " + agentToTrain.agent_name + " completed successfully"
+          );
           $scope.message = "Training for " + agentToTrain.agent_name + " completed successfully";
           $rootScope.trainings_under_this_process = 0;
+          getRasaStatus();
         },
         function(errorResponse) {
-          $scope.generateError = JSON.stringify(errorResponse.data.errorBody);
+          $rootScope.$broadcast(
+              'setErrorText',
+              "Error: seems some data is missing. " + JSON.stringify(errorResponse.data.errorBody)
+          );
           $rootScope.trainings_under_this_process = 0;
+          getRasaStatus();
         }
       );
   };
@@ -487,6 +496,8 @@ function TrainingController(
           );
         }
       } catch (err) {}
+    }, function(error) {
+      $rootScope.config.isonline = 0;
     });
   }
 }

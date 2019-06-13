@@ -15,6 +15,8 @@ function EditIntentController(
   Responses,
   Response
 ) {
+  $scope.generateError = '';
+
   Agent.get({ agent_id: $scope.$routeParams.agent_id }, function(data) {
     $scope.agent = data;
   });
@@ -143,21 +145,31 @@ function EditIntentController(
     });
   }
   $scope.addParameter = function(expression_id) {
-    const selectedText = window.getSelection().toString();
-    if (selectedText !== '') {
-      const expressionText = $('#expression_' + expression_id).text();
-      const newObj = {};
-      newObj.expression_id = expression_id;
-      newObj.parameter_start = expressionText.indexOf(selectedText);
-      newObj.parameter_end = newObj.parameter_start + selectedText.length;
-      newObj.parameter_value = selectedText;
-      Parameter.save(newObj).$promise.then(function() {
-        loadExpressions();
-      });
+    if ($scope.entityList && $scope.entityList.length > 0){
+      $scope.generateError = "";
+      const selectedText = window.getSelection().toString();
+      if (selectedText !== '') {
+        const expressionText = $('#expression_' + expression_id).text();
+        const newObj = {};
+        newObj.expression_id = expression_id;
+        newObj.parameter_start = expressionText.indexOf(selectedText);
+        newObj.parameter_end = newObj.parameter_start + selectedText.length;
+        newObj.parameter_value = selectedText;
+        Parameter.save(newObj).$promise.then(function() {
+          loadExpressions();
+        });
 
-      //Make sure parameter table is open
-      $('#table_expression_' + expression_id).addClass('show');
+        //Make sure parameter table is open
+        $('#table_expression_' + expression_id).addClass('show');
+      }
     }
+    else{
+      $rootScope.$broadcast(
+          'setErrorText',
+          'You must add at least one Entity before using this function.'
+      );
+    }
+
   };
 
   $scope.deleteParameter = function(parameter_id) {

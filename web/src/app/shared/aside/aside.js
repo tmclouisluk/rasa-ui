@@ -57,7 +57,7 @@ function AsideController(
 
   function getRasaConfig() {
     Rasa_Status.get(function(statusdata) {
-
+          $rootScope.config.isonline = 1;
           $rootScope.config.server_model_dirs_array = window.getAvailableModels(
             statusdata
           );
@@ -65,6 +65,8 @@ function AsideController(
             $rootScope.modelname =
               $rootScope.config.server_model_dirs_array[0].name;
           }
+    }, function(error) {
+      $rootScope.config.isonline = 0;
     });
   }
   $scope.restartConversation = function() {

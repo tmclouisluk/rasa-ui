@@ -106,9 +106,11 @@ tags-input .tags .tag-item .remove-button {
   right: 10px;
   top: 5px;
 }
-.alert-text{
+.alert-text {
+
+}
 @media (max-width: 991px) {
-  .sidebar-hidden .sidebar {
-      margin-left: -200px;
-  }
+    .sidebar-hidden .sidebar {
+        margin-left: -200px;
+    }
 }

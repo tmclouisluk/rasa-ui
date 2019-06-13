@@ -41,15 +41,15 @@
     "yaml": "^1.3.2"
   },
   "config": {
-    "rasanluendpoint": "http://localhost:5000",
-    "rasacoreendpoint": "http://localhost:5002",
+    "rasanluendpoint": "http://158.132.85.94:28037",
+    "rasacoreendpoint": "http://158.132.85.94:28039",
     "rasacorerequestpath": "/webhooks/rest/webhook",
     "coresecuritytoken": "",
     "corejwttoken": "",
     "nlusecuritytoken": "",
     "cacheagents": false,
     "jwtsecret": "th1s1sn0t0nlyths3cr3tbutth3m0st1mp0rtAntp13c30f1nf0rmAt10nf0rth1sAppl1cAt10n",
-    "postgresserver": "postgres://rasaui:compose@localhost:5432/rasaui",
+    "postgresserver": "postgres://postgres:postgres@158.132.85.94:28040/rasaui",
     "adalauthentication": false,
     "adalinstance": "https://login.microsoftonline.com",
     "adaltenantid": "",

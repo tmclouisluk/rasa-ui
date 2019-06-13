@@ -76,7 +76,6 @@ function ActionsController(
       ) {
         const new_prefix = action.action_name_prefix;
         const new_name = action.action_name;
-        action.action_name = action.action_name_prefix + action.action_name;
         Actions.update({ action_id: action.action_id }, action).$promise.then(
           function() {
             $rootScope.$broadcast(

@@ -73,7 +73,15 @@ angular
       $scope.alert_text = alert_text;
       $timeout(function() {
         $("#alertTextDiv").removeClass("show");
-      }, 2000);
+      }, 12000);
+    });
+
+    $scope.$on("setErrorText", function(event, error_text) {
+        $("#errorTextDiv").addClass("show");
+        $scope.error_text = error_text;
+        $timeout(function() {
+            $("#errorTextDiv").removeClass("show");
+        }, 12000);
     });
 
     $scope.loginUser = function(user) {

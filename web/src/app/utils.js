@@ -63,7 +63,10 @@ function getAvailableModels(statusData) {
     modelItr: for (var i = 0; i < projectObj.available_models.length; i++) {
       const modelName = projectObj.available_models[i];
       //if(modelName == 'fallback') continue modelItr;
-      const xdate = parseRasaModelFolderDate(modelName);
+      var xdate = parseRasaModelFolderDate(modelName);
+      if (!xdate.valid()){
+        xdate = "Default";
+      }
       arrModels.push({ name: project + '*' + modelName, xdate: xdate });
     }
   }

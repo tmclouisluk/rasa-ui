@@ -44,14 +44,11 @@
                     </label>
                   </span>
                 </div>
-                <div ng-show="exportdata !== undefined">
-                  <div class="col-sm-12">
-                    <div class="alert alert-danger" role="alert" ng-show="generateError !== ''">
-                      <strong>Error</strong> seems some data is missing. ({{generateError}})
+                  <div ng-show="exportdata !== undefined">
+                    <div>
+                      <json-formatter json="exportdata" open="4"></json-formatter>
                     </div>
-                    <json-formatter json="exportdata" open="4"></json-formatter>
                   </div>
-                </div>
               </div>
                <div class="card-footer">
                  <button type="button" class="btn btn-success" ng-show="exportdata !== undefined" ng-click="train()"><i class="fa fa-magic"></i>&nbsp; Start Training</button>
