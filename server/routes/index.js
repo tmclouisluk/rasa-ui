@@ -93,6 +93,8 @@ router.delete('/synonyms/:synonym_id/variants', variants.removeSynonymVariants);
 router.get('/settings', settings.getSettings);
 router.get('/settings/:setting_name', settings.getSingleSetting);
 router.put('/settings/:setting_name', settings.updateSetting);
+router.get('/models', settings.getModels);
+router.post('/models', settings.createModel);
 //routes actions responses
 router.get('/actionresponse/:action_id', responses.getActionResponses);
 router.post('/actionresponse', responses.createActionResponse);
@@ -128,6 +130,7 @@ router.get('/rasa/config', nlu_router.getRasaNluConfig);
 router.get('/rasa/version', nlu_router.getRasaNluVersion);
 router.post('/rasa/train', nlu_router.trainRasaNlu);
 router.delete('/rasa/models', nlu_router.unloadRasaModel);
+router.put('/rasa/models', nlu_router.loadRasaModel);
 //common middleware for parse
 router.post('/rasa/parse', middleware.parseRasaRequest);
 //rasa core API

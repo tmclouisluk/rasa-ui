@@ -58,8 +58,57 @@ function getRasaNluVersion(req, res, next) {
   });
 }
 
+function loadRasaModel(req, res, next) {
+  logger.winston.info(
+      'Rasa Load Model -> ' + global.rasanluendpoint + '/model'
+  );
+  var reqBody = JSON.stringify({
+    model_file: req.body.model
+  });
+  logRequest(req, "loadModel", {
+    project: req.query.project,
+    model: req.query.name
+  });
+  //console.log(reqBody)
+  try {
+    request({
+      method: "PUT",
+      uri: global.rasanluendpoint + "/model",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: reqBody
+    }, function (error, response, body) {
+      console.log("Done with Request");
+
+      if (error) {
+        console.log("Error Occured when load model. " + error);
+        sendOutput(500, res, '{"error" : ' + error + '}');
+        return;
+      }
+      try {
+        if (response.statusCode != 200) {
+          console.log("Error occured while loading model. Response Code : " + response.statusCode + " Body" + body);
+          sendOutput(response.statusCode, res, JSON.stringify({
+            errorBody: body
+          }));
+          return;
+        }
+        console.log("Loading Model Done !! Response Code : " + response.statusCode);
+        sendOutput(200, res, "");
+        return;
+      } catch (err) {
+        console.log("Exception:" + err);
+        sendOutput(500, res, '{"error" : ' + err + '}');
+      }
+    });
+  } catch (err) {
+    console.log("Exception When sending Loading Model to Rasa:" + err);
+  }
+}
+
 function trainRasaNlu(req, res, next) {
-  console.log("Rasa NLU Train Request -> " + global.rasanluendpoint + "/train?project=" + req.query.project + "&model=" + req.query.name);
+  console.log("Rasa NLU Train Request -> " + global.rasanluendpoint + "/model/train ?project=" + req.query.project + "&model=" + req.query.name);
 
   try {
     nlu_pipeline = JSON.parse(req.body.pipeline)
@@ -67,23 +116,27 @@ function trainRasaNlu(req, res, next) {
     nlu_pipeline = req.body.pipeline
   }
 
+
+  var policies = "\npolicies:\n- name: MemoizationPolicy\n- name: KerasPolicy\n- name: FallbackPolicy\nfallback_action_name: action_default_fallback"
   var reqBody = JSON.stringify({
-    language: req.body.language,
-    pipeline: nlu_pipeline,
-    data: req.body.data
+    config: "language: " + req.body.language + "\npipeline: " + nlu_pipeline + policies,
+    nlu_json: req.body.data,
+    domain: req.body.domain,
+    stories: req.body.stories,
+    out: "models/" + req.body.agent
   });
   logRequest(req, "train", {
     project: req.query.project,
     model: req.query.name,
-    data: reqBody
+    data: reqBody,
   });
-
+  //console.log(reqBody)
   try {
     request({
       method: "POST",
-      uri: global.rasanluendpoint + "/train?project=" + req.query.project + "&model=" + req.query.name,
+      uri: global.rasanluendpoint + "/model/train",
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json; charset=utf-8'
       },
       body: reqBody
     }, function (error, response, body) {
@@ -149,16 +202,14 @@ function parseRequest(req, res, next, agentObj) {
     return;
   }
 
-  let modelName;
+  let modelName = req.body.project;
   let projectName;
 
   let cache_key;
   if (req.body.model !== undefined) {
-    projectName = req.body.project;
-    modelName = req.body.model;
+    modelName = req.body.project;
     cache_key = req.jwt.username + '_' + modelName + '_' + Date.now();
     logRequest(req, 'parse', {
-      project: projectName,
       model: modelName,
       intent: '',
       query: req.body.q
@@ -166,10 +217,15 @@ function parseRequest(req, res, next, agentObj) {
     createInitialCacheRequest(req, cache_key, agentObj);
   }
 
+  var body_data = {
+    model: modelName,
+    text: req.body.q
+  }
+  console.log(body_data)
   request({
       method: 'POST',
-      uri: global.rasanluendpoint + '/parse',
-      body: JSON.stringify(req.body)
+      uri: global.rasanluendpoint + '/model/parse',
+      body: JSON.stringify(body_data)
     },
     function (error, response, body) {
       if (error) {
@@ -513,5 +569,6 @@ module.exports = {
   trainRasaNlu: trainRasaNlu,
   parseRequest: parseRequest,
   getRasaNluEndpoint: getRasaNluEndpoint,
-  unloadRasaModel: unloadRasaModel
+  unloadRasaModel: unloadRasaModel,
+  loadRasaModel: loadRasaModel
 };

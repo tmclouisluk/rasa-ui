@@ -11,6 +11,7 @@ function DashboardController($scope, $http, Rasa_Status, NLU_log_stats, appConfi
       $scope.trainings_under_this_process = window.getNoOfTrainingJobs(data);
       $scope.available_models = window.getAvailableModels(data);
       $scope.loaded_models = window.getLoadedModels(data);
+      $scope.model_list = data.model_list;
     });
   }
 

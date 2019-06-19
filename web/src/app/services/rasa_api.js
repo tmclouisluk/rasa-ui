@@ -19,6 +19,10 @@ app.factory('Rasa_Version', function($resource, appConfig) {
   return $resource(appConfig.api_endpoint_v2 + '/rasa/version');
 });
 
+app.factory('Rasa_Models', function($resource, appConfig) {
+  return $resource(appConfig.api_endpoint_v2 + '/models');
+});
+
 /* TODO: future feature
 app.factory('Set_Rasa_Config', function($resource) {
   return $resource(rasa_api_endpoint + '/setconfig?:key=:value', {key: '@id', value: '@id'});

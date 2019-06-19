@@ -39,9 +39,10 @@ function TrainingController(
     let id = new XDate().toString('yyyyMMdd-HHmmss');
     reset();
     let modelName=agentToTrain.agent_name + "_" + id;
+
     //Add pipeline and language
-    let dataToPost = { language:agentToTrain.rasa_nlu_language, pipeline:agentToTrain.rasa_nlu_pipeline, data:exportData };
-    
+    let dataToPost = { language:agentToTrain.rasa_nlu_language, pipeline:agentToTrain.rasa_nlu_pipeline,
+      data:exportData, domain: $scope.domain_yml, stories: $scope.stories_md, agent: agentToTrain.agent_name};
     // Use Fixed model name if available
     if(agentToTrain.rasa_nlu_fixed_model_name!=null && agentToTrain.rasa_nlu_fixed_model_name !== ''){
       modelName = agentToTrain.rasa_nlu_fixed_model_name;
@@ -481,6 +482,14 @@ function TrainingController(
             $rootScope.config.server_model_dirs_array[0].name;
         } else {
           $rootScope.modelname = 'Default';
+        }
+
+        if (
+            statusdata !== undefined ||
+            statusdata.model_list !== undefined
+        ) {
+
+          $rootScope.model_list = statusdata.model_list;
         }
 
         if (

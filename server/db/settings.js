@@ -39,7 +39,37 @@ function updateSetting(req, res, next) {
     });
 }
 
+function getModels(req, res, next) {
+  logger.winston.info('settings.getModels');
+  db.any('select * from model')
+      .then(function(data) {
+        res.status(200).json(data);
+      })
+      .catch(function(err) {
+        return next(err);
+      });
+}
+
+function createModel(req, res, next) {
+  logger.winston.info('settings.createModel');
+  db.any(
+      'insert into model(agent_id, name, created_date) values($(agent_id), $(name), $(created_date)) RETURNING model_id',
+      req.body
+  )
+      .then(function(data) {
+        res.status(200).json({
+          status: 'success',
+          message: 'Inserted',
+          regex_id: data[0].model_id});
+      })
+      .catch(function(err) {
+        return next(err);
+      });
+}
+
 module.exports = {
   getSingleSetting,
   getSettings,
-  updateSetting};
+  updateSetting,
+  getModels,
+  createModel};

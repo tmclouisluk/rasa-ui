@@ -57,14 +57,26 @@ function AsideController(
 
   function getRasaConfig() {
     Rasa_Status.get(function(statusdata) {
+      //console.log(statusdata)
           $rootScope.config.isonline = 1;
-          $rootScope.config.server_model_dirs_array = window.getAvailableModels(
-            statusdata
-          );
-          if ($rootScope.config.server_model_dirs_array.length > 0) {
-            $rootScope.modelname =
-              $rootScope.config.server_model_dirs_array[0].name;
-          }
+          // $rootScope.config.server_model_dirs_array = window.getAvailableModels(
+          //   statusdata
+          // );
+          var model_list = statusdata.model_list;
+          model_list = model_list.sort(function (a,b) {
+            return b.date - a.date;
+          })
+          model_list = model_list.map(function(obj){
+            return {
+              name: obj.name,
+              date: new Date(obj.date*1000)
+            }
+          })
+          $rootScope.model_list = model_list;
+          // if ($rootScope.config.server_model_dirs_array.length > 0) {
+          //   $rootScope.modelname =
+          //     $rootScope.config.server_model_dirs_array[0].name;
+          // }
     }, function(error) {
       $rootScope.config.isonline = 0;
     });

@@ -417,6 +417,19 @@ WITH (
 )
 TABLESPACE pg_default;
 
+CREATE TABLE model
+(
+  model_id serial NOT NULL,
+  agent_id integer,
+  name character varying,
+  created_date timestamp without time zone,
+  CONSTRAINT model_pk PRIMARY KEY (model_id)
+)
+WITH (
+  OIDS=FALSE
+)
+TABLESPACE pg_default;
+
 -- nlu_parse_log correspondance table with entities table 
 CREATE TABLE messages_entities
 (
