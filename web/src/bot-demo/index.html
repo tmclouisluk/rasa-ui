@@ -7,7 +7,6 @@
     <script src="http:////netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
 
     <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,300' rel='stylesheet' type='text/css'>
-
     <script src="https://use.typekit.net/hoy3lrg.js"></script>
     <script>try{Typekit.load({ async: true });}catch(e){}</script>
     <link rel='stylesheet prefetch' href='https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css'>
@@ -672,10 +671,58 @@
 #frame .content .message-input .wrap button:focus {
   outline: none;
 }
+
+    .overlay {
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        background: #222;
+        z-index: 9999;
+    }
+
+    .overlay__inner {
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+
+    .overlay__content {
+        left: 50%;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .spinner {
+        width: 75px;
+        height: 75px;
+        display: inline-block;
+        border-width: 2px;
+        border-color: rgba(255, 255, 255, 0.05);
+        border-top-color: #fff;
+        animation: spin 1s infinite linear;
+        border-radius: 100%;
+        border-style: solid;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 </head>
 
 <body onload="authenticate();">
+    <div class="overlay">
+        <div class="overlay__inner">
+            <div class="overlay__content"><span class="spinner"></span></div>
+        </div>
+    </div>
     <div id="frame">
         <div class="content">
             <div class="contact-profile">
@@ -688,14 +735,7 @@
             </div>
             <div class="messages" id="messagesdiv-id">
                 <ul id="messagesul-id">
-                    <li class="sent">
-                        <img src="/assets/img/test_page_logo.png" alt="" />
-                        <p>Hello user</p>
-                    </li>
-                    <li class="replies">
-                        <img src="http://emilcarlsson.se/assets/mikeross.png" alt="" />
-                        <p>hi Bot</p>
-                    </li>
+
                 </ul>
             </div>
             <div class="message-input">
@@ -732,13 +772,55 @@
             $("#titletext").append("<span>"+agent_info.agent_name + "</span><span style='font-size: small;'> (User: Demo_"+userId+")</span>");
         }
         // NLU Data
+        function getCookie(name) {
+            let cookie = {};
+            document.cookie.split(';').forEach(function(el) {
+                let [k,v] = el.split('=');
+                cookie[k.trim()] = v;
+            })
+            return cookie[name];
+        }
+        function changeModel(name) {
+            json_data = {
+                project: name,
+                q: "hi"
+            };
+            $.ajax({
+                type: "POST",
+                url: "/api/v2/rasa/parse",
+                headers: {
+                    'Authorization': "Bearer " + getCookie('loggedinjwt'),
+                },
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(json_data),
+                beforeSend: function (data) {
+                    $(".overlay").show();
+
+                },
+                success: function (data) {
+                    $(".overlay").hide();
+                }
+            });
+        }
+        $("#nlu_model_select").change(function() {
+            changeModel($( this ).val());
+        });
+        //console.log(document.cookie, getCookie('loggedinjwt'));
         $.ajax({
             type: "GET",
-            url: agent_info.nlu_endpoint+ "/status",
+            url: "/api/v2/rasa/status",
+            headers: {
+                'Authorization': "Bearer " + getCookie('loggedinjwt'),
+            },
             success: function (data) {
-                var models = data.available_projects[eval("agent_info.agent_name")].available_models;
+                console.log(data)
+                var models = data.model_list.filter(function(obj){
+                    return obj.name.includes(agent_info.agent_name);
+                });
+                changeModel(models[0].name);
                 models.forEach(function (element) {
-                    $("#nlu_model_select").append('<option value="' + element + '">' + element +
+                    $("#nlu_model_select").append('<option value="' + element.name + '">' + element.name +
                         '</option>');
                 });
             }
