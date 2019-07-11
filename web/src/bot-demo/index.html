@@ -740,7 +740,7 @@
             </div>
             <div class="message-input">
                 <div class="wrap">
-                    <input type="text" placeholder="Write your message..." />
+                    <input id="reply" type="text" placeholder="Write your message..." />
                     <button class="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
                 </div>
             </div>
@@ -912,6 +912,11 @@
             postMessage2Rasa(textMessage);
         };
 
+        function sendPayload(payload) {
+            $('#reply').val(payload+'');
+            $('.submit').click();
+        }
+
         function postMessage2Rasa(message) {
             //make ajax call to rasa-ui
             $.ajax({ // send text to rasa endpoint
@@ -955,8 +960,16 @@
                                     '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Response from the server.</p></li>'
                                 ).appendTo($('.messages ul'));
                             }
+                            var button = "";
+                            if ("buttons" in response[i]) {
+                                button = "&nbsp;<div class=\"btn-group\" role=\"group\">";
+                                for (var a = 0; a < response[i].buttons.length; a++) {
+                                    button = button + '<button type="button"  class="btn btn-light" onclick=\'sendPayload(\"' + response[i].buttons[a].payload + '\");\'>' + response[i].buttons[a].title + '</button>';
+                                }
+                                button = button + '</div>';
+                            }
                             $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
-                                response[i].text + '</p></li>').appendTo($('.messages ul'));
+                                response[i].text + '</p></br><span style="padding-left:30px;">'+button+'</span></li>').appendTo($('.messages ul'));
                         }
                     }
                     $(".messages").animate({
