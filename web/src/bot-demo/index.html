@@ -6,6 +6,7 @@
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="http:////netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
 
+    <script src="../socket.io.js"></script>
     <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,300' rel='stylesheet' type='text/css'>
     <script src="https://use.typekit.net/hoy3lrg.js"></script>
     <script>try{Typekit.load({ async: true });}catch(e){}</script>
@@ -748,6 +749,11 @@
     </div>
 
     <script type="text/javascript">
+        handoff=false;
+        var socket=null;
+        var ask=new Array();
+        var reply=new Array();
+
         //fetch request params
         $.urlParam = function (name) {
             var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -762,7 +768,7 @@
         //set agent info
         var agent_info = $.urlParam('id');
         var userId = Date.now();
-       
+
 
         if (agent_info == null || agent_info == '') {
             alert("Unable to Load Agent, Cannot Proceed. Please check your URL.");
@@ -814,10 +820,15 @@
                 'Authorization': "Bearer " + getCookie('loggedinjwt'),
             },
             success: function (data) {
-                console.log(data)
+                //console.log(data)
                 var models = data.model_list.filter(function(obj){
                     return obj.name.includes(agent_info.agent_name);
                 });
+                //console.log(models)
+                models = models.sort(function(a, b){
+                    return b.date-a.date;
+                })
+                //console.log(models)
                 changeModel(models[0].name);
                 models.forEach(function (element) {
                     $("#nlu_model_select").append('<option value="' + element.name + '">' + element.name +
@@ -919,64 +930,118 @@
 
         function postMessage2Rasa(message) {
             //make ajax call to rasa-ui
-            $.ajax({ // send text to rasa endpoint
-                url: "/api/v2/rasa/parse",
-                type: "POST",
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                data: JSON.stringify({
-                    q: message,
-                    model: $("#nlu_model_select option:selected").val(),
-                    project: agent_info.agent_name
-                }),
-                headers: {
-                    "Authorization": "Bearer " + window.sessionStorage.getItem("cb-jwt")
-                },
-                success: function (response) {
-                    //check nlu or core response
-                    if (!Array.isArray(response)) {
-                        //it is rasa nlu response
-                        if (!$.isEmptyObject(response.response_text)) { // check if text response is returned
-                            $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
-                                response.response_text + '</p></li>').appendTo($('.messages ul'));
-                        } else {
-                            $(
-                                '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>Classified as :' +
-                                response.intent.name + ' intent</p></li>').appendTo($('.messages ul'));
-                            $(
-                                '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Static response or Webhook response found.</p></li>'
-                            ).appendTo($('.messages ul'));
-                        }
-                    } else {
-                        //core response
-                        if(response.length ==0){
-                            $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Responses from the server.</p></li>'
-                                ).appendTo($('.messages ul'));
-                        }
-                        for (var i = 0; i < response.length; i++) {
-                            //add text
-                            if (response[i].text == '') {
-                                $(
-                                    '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Response from the server.</p></li>'
-                                ).appendTo($('.messages ul'));
-                            }
-                            var button = "";
-                            if ("buttons" in response[i]) {
-                                button = "&nbsp;<div class=\"btn-group\" role=\"group\">";
-                                for (var a = 0; a < response[i].buttons.length; a++) {
-                                    button = button + '<button type="button"  class="btn btn-light" onclick=\'sendPayload(\"' + response[i].buttons[a].payload + '\");\'>' + response[i].buttons[a].title + '</button>';
-                                }
-                                button = button + '</div>';
-                            }
-                            $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
-                                response[i].text + '</p></br><span style="padding-left:30px;">'+button+'</span></li>').appendTo($('.messages ul'));
-                        }
-                    }
-                    $(".messages").animate({
-                        scrollTop: $('#messagesdiv-id')[0].scrollHeight
-                    }, "swing");
+            console.log("message:"+message);
+            if(handoff==true){
+
+                for (var i = 0; i < ask.length-1; i++) {
+                    console.log("User:"+ask[i]);
+                    console.log("Reply:"+reply[i]);
                 }
-            });
+                if(message!="close"){
+                    socket.emit('ask', message);
+                }
+                else{
+                    handoff=false;
+                    socket.disconnect();
+                    $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
+                        "You are now disconnected." + '</p></li>').appendTo($('.messages ul'));
+                }
+
+            }else {
+                //Added by tenglu
+                ask.push(message);
+                $.ajax({ // send text to rasa endpoint
+                    url: "/api/v2/rasa/parse",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify({
+                        q: message,
+                        model: $("#nlu_model_select option:selected").val(),
+                        project: agent_info.agent_name
+                    }),
+                    headers: {
+                        "Authorization": "Bearer " + window.sessionStorage.getItem("cb-jwt")
+                    },
+                    success: function (response) {
+                        //check nlu or core response
+                        if (!Array.isArray(response)) {
+                            //it is rasa nlu response
+                            if (!$.isEmptyObject(response.response_text)) { // check if text response is returned
+                                $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
+                                    response.response_text + '</p></li>').appendTo($('.messages ul'));
+                            } else {
+                                $(
+                                    '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>Classified as :' +
+                                    response.intent.name + ' intent</p></li>').appendTo($('.messages ul'));
+                                $(
+                                    '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Static response or Webhook response found.</p></li>'
+                                ).appendTo($('.messages ul'));
+                            }
+                        } else {
+                            //core response
+                            if (response.length == 0) {
+                                $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Responses from the server.</p></li>'
+                                ).appendTo($('.messages ul'));
+                            }
+                            for (var i = 0; i < response.length; i++) {
+                                //add text
+                                if (response[i].text == '') {
+                                    $(
+                                        '<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>No Response from the server.</p></li>'
+                                    ).appendTo($('.messages ul'));
+                                }
+                                var button = "";
+                                if ("buttons" in response[i]) {
+                                    button = "&nbsp;<div class=\"btn-group\" role=\"group\">";
+                                    for (var a = 0; a < response[i].buttons.length; a++) {
+                                        button = button + '<button type="button"  class="btn btn-light" onclick=\'sendPayload(\"' + response[i].buttons[a].payload + '\");\'>' + response[i].buttons[a].title + '</button>';
+                                    }
+                                    button = button + '</div>';
+                                }
+                                if(response[i].text!= 'connecting') {
+                                    $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
+                                        response[i].text + '</p></br><span style="padding-left:30px;">' + button + '</span></li>').appendTo($('.messages ul'));
+                                }
+                                else{
+                                    handoff=true;
+                                    socket = io.connect('158.132.85.94:28043');
+                                    $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
+                                        "You are now connected to a human" + '</p></li>').appendTo($('.messages ul'));
+                                    socket.emit('user_login', {
+                                        userId:1,
+                                        socketId: 1,
+                                        tokenId:1,
+                                        ask:ask,
+                                        reply:reply
+                                    });
+                                    ask=[];
+                                    reply=[];
+                                    socket.on('reply', function (data) {
+                                        if(data!='close'){
+                                            $(`<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>${data}</p></li>`
+                                            ).appendTo($('.messages ul'));
+                                            $(".messages").animate({
+                                                scrollTop: $('#messagesdiv-id')[0].scrollHeight
+                                            }, "swing");
+                                        }else{
+                                            handoff=false;
+                                            socket.disconnect();
+                                            $('<li class="sent"><img src="/assets/img/test_page_logo.png" alt="" /><p>' +
+                                                "You are now disconnected." + '</p></li>').appendTo($('.messages ul'));
+                                        }
+
+
+                                    });
+                                }
+                            }
+                        }
+                        $(".messages").animate({
+                            scrollTop: $('#messagesdiv-id')[0].scrollHeight
+                        }, "swing");
+                    }
+                });
+            }
         }
         $('.submit').click(function () {
             newMessage();

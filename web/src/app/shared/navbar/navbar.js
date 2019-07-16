@@ -4,20 +4,11 @@ function NavBarController(
   $scope,
   $rootScope,
   adalAuthenticationService,
-  appConfig
+  appConfig,
+  $window
 ) {
   $scope.toggleAside = function() {
-    if (angular.element("body").hasClass("aside-menu-hidden")) {
-      angular
-        .element("body")
-        .removeClass("aside-menu-hidden")
-        .addClass("aside-menu-fixed");
-    } else {
-      angular
-        .element("body")
-        .removeClass("aside-menu-fixed")
-        .addClass("aside-menu-hidden");
-    }
+    $window.open('/cs');
   };
 
   $scope.toggleSidebar = function() {
